@@ -1,0 +1,442 @@
+<!doctype html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PDF Form Editor – checkboxy a textová pole</title>
+<style>
+:root{
+  --bg:#d8e0ea;--panel:#fff;--blue:#184a73;--accent:#1f6fb2;--line:#c7d0dc;
+  --sel:#ffb300;--green:#1b8f3a;--red:#c62828;
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:#111}
+header{
+  position:sticky;top:0;z-index:50;background:var(--blue);color:white;
+  padding:9px 12px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;box-shadow:0 2px 8px #0005
+}
+header b{font-size:17px;margin-right:8px}
+button,.fileBtn,select,input[type=number]{
+  border:0;border-radius:8px;padding:8px 10px;font-weight:700;background:white;color:#17344f;cursor:pointer
+}
+button.active{background:#ffe08a}
+button.primary{background:#cce9ff}
+button.good{background:#d2f5d2}
+button.danger{background:#ffd0d0}
+button:disabled{opacity:.45;cursor:not-allowed}
+.fileBtn input{display:none}
+main{display:grid;grid-template-columns:330px 1fr;gap:12px;padding:12px}
+aside{
+  background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px;
+  height:calc(100vh - 76px);overflow:auto;position:sticky;top:64px
+}
+#viewer{
+  height:calc(100vh - 76px);overflow:auto;background:#b9c3ce;border-radius:12px;padding:18px;text-align:center
+}
+.pageWrap{
+  position:relative;margin:0 auto 18px auto;background:white;box-shadow:0 2px 14px #0006;display:inline-block;text-align:left
+}
+canvas{display:block}
+.layer{position:absolute;inset:0;overflow:hidden}
+.textBox{
+  position:absolute;color:rgba(0,0,0,.08);background:rgba(255,255,255,0);cursor:pointer;
+  border:1px solid transparent;white-space:pre;user-select:none
+}
+.textBox:hover{border-color:#9cc4ec;background:rgba(214,235,255,.22)}
+.textBox.selected{border:2px solid var(--sel);background:rgba(255,224,138,.25)}
+.formItem,.newItem{
+  position:absolute;cursor:move;border:2px solid var(--accent);background:rgba(207,232,255,.22);
+  min-width:12px;min-height:12px;user-select:none
+}
+.formItem.checkbox,.newItem.checkbox{
+  background:white;border:2px solid var(--green);display:flex;align-items:center;justify-content:center;color:#111;font-weight:900
+}
+.formItem.text,.newItem.text{background:rgba(255,255,255,.72)}
+.formItem.selected,.newItem.selected{outline:3px solid var(--sel);outline-offset:1px}
+.newItem.white{background:white;border:2px dashed #999}
+.newItem.line{height:0!important;border:0;border-top:2px solid #111;min-height:0}
+.handle{position:absolute;right:-5px;bottom:-5px;width:10px;height:10px;background:var(--sel);border:1px solid #222;cursor:nwse-resize}
+h3{margin:8px 0 6px;color:#17344f}
+p.hint{font-size:13px;line-height:1.35;color:#333;margin:5px 0 10px}
+label{font-size:12px;font-weight:700;color:#344;margin-top:8px;display:block}
+textarea,input[type=text],input[type=number]{
+  width:100%;border:1px solid #b7c0cc;border-radius:7px;padding:7px;margin:4px 0 8px;background:white
+}
+textarea{min-height:80px}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.list{border:1px solid var(--line);border-radius:8px;max-height:170px;overflow:auto;background:#fafafa}
+.list div{padding:6px 8px;border-bottom:1px solid #eee;font-size:12px;cursor:pointer}
+.list div:hover{background:#eef6ff}
+.badge{display:inline-block;border-radius:999px;background:#e8f2ff;color:#17344f;padding:2px 7px;font-size:12px;margin-left:3px}
+.small{font-size:12px;color:#555}
+hr{border:0;border-top:1px solid var(--line);margin:12px 0}
+@media(max-width:900px){main{grid-template-columns:1fr}aside{position:static;height:auto}#viewer{height:auto;min-height:70vh}}
+</style>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
+</head>
+<body>
+<header>
+  <b>PDF Form Editor</b>
+  <label class="fileBtn">Nahrát PDF <input id="file" type="file" accept="application/pdf"></label>
+  <button id="toolSelect" class="active">Výběr</button>
+  <button id="toolText">Nové textové pole</button>
+  <button id="toolCheck">Nový checkbox</button>
+  <button id="toolWhite">Bílý překryv</button>
+  <button id="toolLine">Linka</button>
+  <button id="exportEditable" class="primary" disabled>Export vyplnitelné PDF</button>
+  <button id="exportFlat" class="good" disabled>Export needitovatelné PDF</button>
+</header>
+
+<main>
+<aside>
+  <h3>Co to umí</h3>
+  <p class="hint">
+    Aplikace načte libovolné PDF, vykreslí stránky, pokusí se rozpoznat existující formulářová pole
+    a checkboxy. Ty pak můžeš posunout, zvětšit, přepsat hodnotu nebo smazat.
+  </p>
+  <p class="hint">
+    Běžný text v PDF nejde skutečně přepsat jako ve Wordu. Jde ho ale označit, zakrýt bílým překryvem
+    a napsat nový text navrch.
+  </p>
+
+  <hr>
+  <h3>Rozpoznané prvky <span id="countBadge" class="badge">0</span></h3>
+  <div id="fieldList" class="list"><div>Nahraj PDF.</div></div>
+
+  <hr>
+  <h3>Vybraný prvek</h3>
+  <label>Typ</label>
+  <input id="propType" type="text" readonly>
+  <label>Text / hodnota</label>
+  <textarea id="propText"></textarea>
+  <div class="row">
+    <div><label>Strana</label><input id="propPage" type="number" readonly></div>
+    <div><label>Velikost písma</label><input id="propFont" type="number" value="11"></div>
+  </div>
+  <div class="row">
+    <div><label>X</label><input id="propX" type="number"></div>
+    <div><label>Y</label><input id="propY" type="number"></div>
+  </div>
+  <div class="row">
+    <div><label>Šířka</label><input id="propW" type="number"></div>
+    <div><label>Výška</label><input id="propH" type="number"></div>
+  </div>
+  <button id="applyBtn">Použít</button>
+  <button id="deleteBtn" class="danger">Smazat prvek</button>
+  <button id="toggleCheckBtn">Zaškrtnout / odškrtnout</button>
+
+  <hr>
+  <h3>Postup pro opravu textu</h3>
+  <p class="hint">
+    1. Zapni „Výběr“ a klikni na špatný text v PDF.<br>
+    2. Vlož „Bílý překryv“ přes starý text.<br>
+    3. Vlož „Nové textové pole“ se správným textem.<br>
+    4. Exportuj needitovatelné PDF.
+  </p>
+  <p class="small">
+    Poznámka: přesné automatické rozpoznání checkboxů v naskenovaných obrázcích tato offline HTML aplikace nedělá.
+    Rozpozná hlavně skutečná PDF formulářová pole.
+  </p>
+</aside>
+
+<section id="viewer"><p>Nahraj PDF soubor.</p></section>
+</main>
+
+<script>
+pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+
+let pdfBytes=null, pdfjsDoc=null, scale=1.45, currentTool='select', selected=null;
+let pageSizes={}; // page -> {w,h}
+let items=[]; // existing+new objects in PDF point coords: {id,kind,fieldName,page,x,y,w,h,value,checked,fontSize,isNew,deleted}
+let textBoxes=[];
+
+const viewer=document.getElementById('viewer');
+const $=id=>document.getElementById(id);
+const uid=()=>Math.random().toString(36).slice(2,9);
+
+function setTool(t){
+  currentTool=t;
+  ['toolSelect','toolText','toolCheck','toolWhite','toolLine'].forEach(id=>$(id).classList.remove('active'));
+  ({select:'toolSelect',text:'toolText',check:'toolCheck',white:'toolWhite',line:'toolLine'}[t] && $(({select:'toolSelect',text:'toolText',check:'toolCheck',white:'toolWhite',line:'toolLine'}[t])).classList.add('active'));
+}
+$('toolSelect').onclick=()=>setTool('select');
+$('toolText').onclick=()=>setTool('text');
+$('toolCheck').onclick=()=>setTool('check');
+$('toolWhite').onclick=()=>setTool('white');
+$('toolLine').onclick=()=>setTool('line');
+
+$('file').onchange=async e=>{
+  const f=e.target.files[0]; if(!f) return;
+  pdfBytes=await f.arrayBuffer();
+  pdfjsDoc=await pdfjsLib.getDocument({data:pdfBytes.slice(0)}).promise;
+  selected=null; items=[]; textBoxes=[]; pageSizes={};
+  await renderAll();
+  await detectAnnotations();
+  drawItems();
+  updateList();
+  $('exportEditable').disabled=false; $('exportFlat').disabled=false;
+};
+
+async function renderAll(){
+  viewer.innerHTML='';
+  for(let p=1;p<=pdfjsDoc.numPages;p++){
+    const page=await pdfjsDoc.getPage(p);
+    const viewport=page.getViewport({scale});
+    const base=page.getViewport({scale:1});
+    pageSizes[p]={w:base.width,h:base.height};
+    const wrap=document.createElement('div');
+    wrap.className='pageWrap'; wrap.dataset.page=p;
+    wrap.style.width=viewport.width+'px'; wrap.style.height=viewport.height+'px';
+    const canvas=document.createElement('canvas');
+    canvas.width=viewport.width; canvas.height=viewport.height;
+    await page.render({canvasContext:canvas.getContext('2d'),viewport}).promise;
+    const textLayer=document.createElement('div'); textLayer.className='layer textLayer';
+    const formLayer=document.createElement('div'); formLayer.className='layer formLayer';
+    formLayer.onclick=e=>placeNew(e,p,wrap);
+    wrap.append(canvas,textLayer,formLayer); viewer.appendChild(wrap);
+    await renderTextBoxes(page,p,textLayer);
+  }
+}
+
+async function renderTextBoxes(page,p,layer){
+  const txt=await page.getTextContent();
+  for(const it of txt.items){
+    const tr=pdfjsLib.Util.transform(page.getViewport({scale}).transform, it.transform);
+    const x=tr[4], y=tr[5], fs=Math.hypot(tr[2],tr[3]) || 10;
+    const div=document.createElement('div');
+    div.className='textBox';
+    div.textContent=it.str;
+    div.style.left=x+'px';
+    div.style.top=(y-fs)+'px';
+    div.style.fontSize=fs+'px';
+    div.style.height=(fs*1.25)+'px';
+    div.style.minWidth=Math.max(10,it.width*scale)+'px';
+    div.onclick=e=>{
+      e.stopPropagation();
+      document.querySelectorAll('.textBox.selected').forEach(d=>d.classList.remove('selected'));
+      div.classList.add('selected');
+      $('propType').value='běžný text PDF (nelze přímo přepsat)';
+      $('propText').value=it.str;
+      $('propPage').value=p;
+      $('propFont').value=Math.round(fs/scale*10)/10;
+      $('propX').value=Math.round(x/scale);
+      $('propY').value=Math.round((y-fs)/scale);
+      $('propW').value=Math.round((it.width||80));
+      $('propH').value=Math.round(fs*1.25/scale);
+      selected=null;
+    };
+    layer.appendChild(div);
+    textBoxes.push({page:p,div,str:it.str});
+  }
+}
+
+async function detectAnnotations(){
+  for(let p=1;p<=pdfjsDoc.numPages;p++){
+    const page=await pdfjsDoc.getPage(p);
+    const anns=await page.getAnnotations({intent:'display'});
+    for(const a of anns){
+      if(a.subtype!=='Widget') continue;
+      const [x1,y1,x2,y2]=a.rect;
+      const w=Math.abs(x2-x1), h=Math.abs(y2-y1);
+      const kind=(a.fieldType==='Btn')?'checkbox':(a.fieldType==='Tx'?'text':'field');
+      items.push({
+        id:uid(),kind,fieldName:a.fieldName||'',page:p,
+        x:Math.min(x1,x2),y:Math.min(y1,y2),w,h,
+        value:a.fieldValue||'',checked:!!a.fieldValue && a.fieldValue!=='Off',
+        fontSize:11,isNew:false,deleted:false
+      });
+    }
+  }
+}
+
+function pageToCss(obj){
+  const ph=pageSizes[obj.page].h;
+  return {left:obj.x*scale, top:(ph-obj.y-obj.h)*scale, width:obj.w*scale, height:obj.h*scale};
+}
+function cssToPage(page,xCss,yCss,wCss,hCss){
+  const ph=pageSizes[page].h;
+  return {x:xCss/scale, y:ph-(yCss/scale)-(hCss/scale), w:wCss/scale, h:hCss/scale};
+}
+
+function drawItems(){
+  document.querySelectorAll('.formItem,.newItem').forEach(e=>e.remove());
+  for(const obj of items.filter(i=>!i.deleted)){
+    const layer=document.querySelector(`.pageWrap[data-page="${obj.page}"] .formLayer`);
+    const el=document.createElement('div'); obj.el=el;
+    el.className=(obj.isNew?'newItem ':'formItem ')+(obj.kind==='checkbox'?'checkbox':obj.kind==='white'?'white':obj.kind==='line'?'line':'text');
+    const c=pageToCss(obj);
+    Object.assign(el.style,{left:c.left+'px',top:c.top+'px',width:c.width+'px',height:c.height+'px'});
+    if(obj.kind==='checkbox') el.textContent=obj.checked?'✓':'';
+    if(obj.kind==='text') {
+      el.textContent=obj.value||'';
+      el.style.fontSize=(obj.fontSize*scale)+'px';
+      el.style.overflow='hidden';
+      el.style.padding='1px 3px';
+    }
+    if(obj.kind==='line') {
+      el.style.height='0px';
+      el.style.minHeight='0px';
+    }
+    const handle=document.createElement('span'); handle.className='handle'; el.appendChild(handle);
+    handle.onmousedown=e=>resizeStart(e,obj);
+    el.onmousedown=e=>dragStart(e,obj);
+    el.onclick=e=>{e.stopPropagation();selectItem(obj)};
+    layer.appendChild(el);
+  }
+}
+function selectItem(obj){
+  if(selected?.el) selected.el.classList.remove('selected');
+  selected=obj;
+  if(obj?.el) obj.el.classList.add('selected');
+  if(!obj) return;
+  $('propType').value=(obj.kind)+(obj.fieldName?' / '+obj.fieldName:'');
+  $('propText').value=obj.value||'';
+  $('propPage').value=obj.page;
+  $('propFont').value=obj.fontSize||11;
+  $('propX').value=Math.round(obj.x);
+  $('propY').value=Math.round(obj.y);
+  $('propW').value=Math.round(obj.w);
+  $('propH').value=Math.round(obj.h);
+}
+
+function placeNew(e,p,wrap){
+  if(e.target.classList.contains('formItem')||e.target.classList.contains('newItem')||e.target.classList.contains('handle')) return;
+  if(currentTool==='select') {selectItem(null);return}
+  const r=wrap.getBoundingClientRect();
+  const x=e.clientX-r.left, y=e.clientY-r.top;
+  const dims={text:[170,24],check:[14,14],white:[180,26],line:[180,2]}[currentTool];
+  const coords=cssToPage(p,x,y,dims[0],dims[1]);
+  const obj={id:uid(),kind: currentTool==='check'?'checkbox':currentTool,page:p,
+    ...coords,value:currentTool==='text'?'Nový text':'',checked:false,fontSize:11,isNew:true,deleted:false,fieldName:''
+  };
+  items.push(obj); drawItems(); selectItem(obj); updateList(); setTool('select');
+}
+
+function dragStart(e,obj){
+  if(e.target.classList.contains('handle')) return;
+  e.preventDefault(); e.stopPropagation(); selectItem(obj);
+  const startX=e.clientX,startY=e.clientY, ox=obj.x, oy=obj.y;
+  document.onmousemove=ev=>{
+    const dx=(ev.clientX-startX)/scale, dy=(ev.clientY-startY)/scale;
+    obj.x=ox+dx; obj.y=oy-dy;
+    const c=pageToCss(obj);
+    Object.assign(obj.el.style,{left:c.left+'px',top:c.top+'px'});
+    selectItem(obj);
+  };
+  document.onmouseup=()=>{document.onmousemove=null;document.onmouseup=null;updateList()};
+}
+function resizeStart(e,obj){
+  e.preventDefault(); e.stopPropagation(); selectItem(obj);
+  const sx=e.clientX, sy=e.clientY, ow=obj.w, oh=obj.h;
+  document.onmousemove=ev=>{
+    obj.w=Math.max(4,ow+(ev.clientX-sx)/scale);
+    obj.h=Math.max(obj.kind==='line'?0:4,oh+(ev.clientY-sy)/scale);
+    const c=pageToCss(obj);
+    Object.assign(obj.el.style,{width:c.width+'px',height:(obj.kind==='line'?0:c.height)+'px'});
+    selectItem(obj);
+  };
+  document.onmouseup=()=>{document.onmousemove=null;document.onmouseup=null;updateList()};
+}
+$('applyBtn').onclick=()=>{
+  if(!selected) return;
+  selected.value=$('propText').value;
+  selected.fontSize=+$('propFont').value||11;
+  selected.x=+$('propX').value||selected.x;
+  selected.y=+$('propY').value||selected.y;
+  selected.w=+$('propW').value||selected.w;
+  selected.h=+$('propH').value||selected.h;
+  drawItems(); selectItem(selected); updateList();
+};
+$('deleteBtn').onclick=()=>{
+  if(!selected) return;
+  selected.deleted=true; selected=null; drawItems(); updateList();
+};
+$('toggleCheckBtn').onclick=()=>{
+  if(!selected || selected.kind!=='checkbox') return;
+  selected.checked=!selected.checked; drawItems(); selectItem(selected);
+};
+
+function updateList(){
+  const list=$('fieldList'); list.innerHTML='';
+  const visible=items.filter(i=>!i.deleted);
+  $('countBadge').textContent=visible.length;
+  if(!visible.length){list.innerHTML='<div>Žádná formulářová pole nebyla rozpoznána.</div>';return;}
+  visible.forEach((it,idx)=>{
+    const d=document.createElement('div');
+    d.textContent=`${idx+1}. str. ${it.page} – ${it.kind}${it.fieldName?' – '+it.fieldName:''}`;
+    d.onclick=()=>{selectItem(it); it.el?.scrollIntoView({block:'center'});}
+    list.appendChild(d);
+  });
+}
+
+async function exportPdf(flatten=false){
+  const {PDFDocument,rgb,StandardFonts}=PDFLib;
+  const out=await PDFDocument.load(pdfBytes.slice(0));
+  const font=await out.embedFont(StandardFonts.Helvetica);
+  const pages=out.getPages();
+
+  // Remove/blank deleted existing fields visually by white overlay, because removing AcroForm widgets safely is complex in browser.
+  for(const it of items){
+    const page=pages[it.page-1];
+    if(it.deleted && !it.isNew){
+      page.drawRectangle({x:it.x,y:it.y,width:it.w,height:it.h,color:rgb(1,1,1)});
+    }
+  }
+
+  // Try to update existing AcroForm values.
+  const form=out.getForm();
+  for(const it of items.filter(i=>!i.deleted && !i.isNew && i.fieldName)){
+    try{
+      const f=form.getFieldMaybe ? form.getFieldMaybe(it.fieldName) : form.getField(it.fieldName);
+      if(it.kind==='checkbox' && f && f.check){
+        it.checked ? f.check() : f.uncheck();
+      } else if(it.kind==='text' && f && f.setText){
+        f.setText(it.value||'');
+      }
+    }catch(e){}
+  }
+
+  // Draw all new items and also draw moved/resized values as appearance layer.
+  for(const it of items.filter(i=>!i.deleted)){
+    const page=pages[it.page-1];
+    if(it.isNew || flatten || !it.fieldName){
+      drawVisual(page,it,font);
+    } else if(flatten){
+      drawVisual(page,it,font);
+    }
+  }
+
+  if(flatten){
+    try{ form.flatten(); }catch(e){}
+  }
+
+  const bytes=await out.save();
+  const blob=new Blob([bytes],{type:'application/pdf'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download=flatten?'upravene_needitovatelne.pdf':'upravene_vyplnitelne.pdf';
+  a.click();
+}
+function drawVisual(page,it,font){
+  if(it.kind==='white'){
+    page.drawRectangle({x:it.x,y:it.y,width:it.w,height:it.h,color:rgb(1,1,1)});
+  } else if(it.kind==='line'){
+    page.drawLine({start:{x:it.x,y:it.y+it.h/2},end:{x:it.x+it.w,y:it.y+it.h/2},thickness:1.2,color:rgb(0,0,0)});
+  } else if(it.kind==='checkbox'){
+    page.drawRectangle({x:it.x,y:it.y,width:it.w,height:it.h,borderWidth:1.2,borderColor:rgb(.1,.1,.1),color:rgb(1,1,1)});
+    if(it.checked){
+      page.drawText('X',{x:it.x+2,y:it.y+1,size:Math.max(8,it.h-3),font,color:rgb(0,0,0)});
+    }
+  } else if(it.kind==='text'){
+    page.drawRectangle({x:it.x,y:it.y,width:it.w,height:it.h,color:rgb(1,1,1),opacity:0});
+    const lines=(it.value||'').split(/\n/);
+    lines.forEach((ln,k)=>page.drawText(ln,{x:it.x+2,y:it.y+it.h-it.fontSize-2-k*(it.fontSize*1.2),size:it.fontSize,font,color:rgb(0,0,0)}));
+  }
+}
+$('exportEditable').onclick=()=>exportPdf(false);
+$('exportFlat').onclick=()=>exportPdf(true);
+</script>
+</body>
+</html>
