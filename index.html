@@ -1,442 +1,569 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="cs">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>PDF Form Editor – checkboxy a textová pole</title>
-<style>
-:root{
-  --bg:#d8e0ea;--panel:#fff;--blue:#184a73;--accent:#1f6fb2;--line:#c7d0dc;
-  --sel:#ffb300;--green:#1b8f3a;--red:#c62828;
-}
-*{box-sizing:border-box}
-body{margin:0;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:#111}
-header{
-  position:sticky;top:0;z-index:50;background:var(--blue);color:white;
-  padding:9px 12px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;box-shadow:0 2px 8px #0005
-}
-header b{font-size:17px;margin-right:8px}
-button,.fileBtn,select,input[type=number]{
-  border:0;border-radius:8px;padding:8px 10px;font-weight:700;background:white;color:#17344f;cursor:pointer
-}
-button.active{background:#ffe08a}
-button.primary{background:#cce9ff}
-button.good{background:#d2f5d2}
-button.danger{background:#ffd0d0}
-button:disabled{opacity:.45;cursor:not-allowed}
-.fileBtn input{display:none}
-main{display:grid;grid-template-columns:330px 1fr;gap:12px;padding:12px}
-aside{
-  background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px;
-  height:calc(100vh - 76px);overflow:auto;position:sticky;top:64px
-}
-#viewer{
-  height:calc(100vh - 76px);overflow:auto;background:#b9c3ce;border-radius:12px;padding:18px;text-align:center
-}
-.pageWrap{
-  position:relative;margin:0 auto 18px auto;background:white;box-shadow:0 2px 14px #0006;display:inline-block;text-align:left
-}
-canvas{display:block}
-.layer{position:absolute;inset:0;overflow:hidden}
-.textBox{
-  position:absolute;color:rgba(0,0,0,.08);background:rgba(255,255,255,0);cursor:pointer;
-  border:1px solid transparent;white-space:pre;user-select:none
-}
-.textBox:hover{border-color:#9cc4ec;background:rgba(214,235,255,.22)}
-.textBox.selected{border:2px solid var(--sel);background:rgba(255,224,138,.25)}
-.formItem,.newItem{
-  position:absolute;cursor:move;border:2px solid var(--accent);background:rgba(207,232,255,.22);
-  min-width:12px;min-height:12px;user-select:none
-}
-.formItem.checkbox,.newItem.checkbox{
-  background:white;border:2px solid var(--green);display:flex;align-items:center;justify-content:center;color:#111;font-weight:900
-}
-.formItem.text,.newItem.text{background:rgba(255,255,255,.72)}
-.formItem.selected,.newItem.selected{outline:3px solid var(--sel);outline-offset:1px}
-.newItem.white{background:white;border:2px dashed #999}
-.newItem.line{height:0!important;border:0;border-top:2px solid #111;min-height:0}
-.handle{position:absolute;right:-5px;bottom:-5px;width:10px;height:10px;background:var(--sel);border:1px solid #222;cursor:nwse-resize}
-h3{margin:8px 0 6px;color:#17344f}
-p.hint{font-size:13px;line-height:1.35;color:#333;margin:5px 0 10px}
-label{font-size:12px;font-weight:700;color:#344;margin-top:8px;display:block}
-textarea,input[type=text],input[type=number]{
-  width:100%;border:1px solid #b7c0cc;border-radius:7px;padding:7px;margin:4px 0 8px;background:white
-}
-textarea{min-height:80px}
-.row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.list{border:1px solid var(--line);border-radius:8px;max-height:170px;overflow:auto;background:#fafafa}
-.list div{padding:6px 8px;border-bottom:1px solid #eee;font-size:12px;cursor:pointer}
-.list div:hover{background:#eef6ff}
-.badge{display:inline-block;border-radius:999px;background:#e8f2ff;color:#17344f;padding:2px 7px;font-size:12px;margin-left:3px}
-.small{font-size:12px;color:#555}
-hr{border:0;border-top:1px solid var(--line);margin:12px 0}
-@media(max-width:900px){main{grid-template-columns:1fr}aside{position:static;height:auto}#viewer{height:auto;min-height:70vh}}
-</style>
+    <meta charset="UTF-8">
+    <title>Dotazník pro rodiče žáků budoucího 1. ročníku gymnázia</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            max-width: 850px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            color: #2c3e50;
+            background-color: #f8f9fa;
+        }
+        .container {
+            background: #ffffff;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        }
+        h1 {
+            text-align: center;
+            color: #1a365d;
+            font-size: 26px;
+            margin-bottom: 30px;
+            border-bottom: 3px solid #2b6cb0;
+            padding-bottom: 15px;
+        }
+        h3 {
+            color: #2b6cb0;
+            margin-top: 35px;
+            margin-bottom: 15px;
+            font-size: 18px;
+            border-bottom: 1px solid #e2e8f0;
+            padding-bottom: 5px;
+        }
+        .intro {
+            font-size: 15px;
+            margin-bottom: 30px;
+            text-align: justify;
+            background-color: #ebf8ff;
+            padding: 20px;
+            border-left: 4px solid #3182ce;
+            border-radius: 0 4px 4px 0;
+        }
+        .form-group {
+            margin-bottom: 22px;
+        }
+        .form-group label {
+            font-weight: 600;
+            display: block;
+            margin-bottom: 8px;
+            color: #2d3748;
+        }
+        .line-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 15px;
+        }
+        @media (max-width: 600px) {
+            .line-group {
+                grid-template-columns: 1fr;
+            }
+        }
+        .line-input-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        .line-input-wrapper label {
+            margin-bottom: 0;
+            white-space: nowrap;
+        }
+        .line-input {
+            border: none;
+            border-bottom: 2px solid #cbd5e0;
+            width: 100%;
+            padding: 6px 0;
+            background: transparent;
+            font-size: 15px;
+            color: #1a202c;
+            transition: border-color 0.2s;
+        }
+        .line-input:focus {
+            outline: none;
+            border-bottom-color: #3182ce;
+        }
+        .checkbox-container {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-left: 5px;
+            margin-top: 8px;
+        }
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .checkbox-group input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+            accent-color: #3182ce;
+        }
+        .checkbox-group label {
+            font-weight: normal;
+            margin-bottom: 0;
+            cursor: pointer;
+            user-select: none;
+        }
+        textarea {
+            width: 100%;
+            height: 80px;
+            border: 2px solid #cbd5e0;
+            border-radius: 6px;
+            resize: vertical;
+            margin-top: 5px;
+            font-family: inherit;
+            font-size: 15px;
+            padding: 10px;
+            box-sizing: border-box;
+            transition: border-color 0.2s;
+        }
+        textarea:focus {
+            outline: none;
+            border-color: #3182ce;
+        }
+        .footer {
+            margin-top: 50px;
+            padding-top: 25px;
+            border-top: 2px solid #e2e8f0;
+            font-size: 14px;
+            text-align: justify;
+        }
+        .actions-panel {
+            margin-top: 40px;
+            padding: 25px;
+            background-color: #f7fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+        }
+        .btn {
+            padding: 12px 24px;
+            font-size: 15px;
+            font-weight: bold;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.1s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .btn-primary {
+            background-color: #3182ce;
+            color: white;
+        }
+        .btn-primary:hover {
+            background-color: #2b6cb0;
+        }
+        .btn-secondary {
+            background-color: #4a5568;
+            color: white;
+        }
+        .btn-secondary:hover {
+            background-color: #2d3748;
+        }
+        .btn:active {
+            transform: scale(0.98);
+        }
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
+        /* Print styles */
+        @media print {
+            body {
+                background-color: white;
+                padding: 0;
+                margin: 0;
+            }
+            .container {
+                box-shadow: none;
+                padding: 0;
+            }
+            .actions-panel {
+                display: none;
+            }
+            textarea {
+                border: 1px solid #cbd5e0;
+                height: 90px;
+            }
+            .line-input {
+                border-bottom: 1px solid #cbd5e0;
+            }
+        }
+    </style>
 </head>
 <body>
-<header>
-  <b>PDF Form Editor</b>
-  <label class="fileBtn">Nahrát PDF <input id="file" type="file" accept="application/pdf"></label>
-  <button id="toolSelect" class="active">Výběr</button>
-  <button id="toolText">Nové textové pole</button>
-  <button id="toolCheck">Nový checkbox</button>
-  <button id="toolWhite">Bílý překryv</button>
-  <button id="toolLine">Linka</button>
-  <button id="exportEditable" class="primary" disabled>Export vyplnitelné PDF</button>
-  <button id="exportFlat" class="good" disabled>Export needitovatelné PDF</button>
-</header>
 
-<main>
-<aside>
-  <h3>Co to umí</h3>
-  <p class="hint">
-    Aplikace načte libovolné PDF, vykreslí stránky, pokusí se rozpoznat existující formulářová pole
-    a checkboxy. Ty pak můžeš posunout, zvětšit, přepsat hodnotu nebo smazat.
-  </p>
-  <p class="hint">
-    Běžný text v PDF nejde skutečně přepsat jako ve Wordu. Jde ho ale označit, zakrýt bílým překryvem
-    a napsat nový text navrch.
-  </p>
+<div class="container">
+    <h1>Dotazník pro rodiče žáků budoucího 1. ročníku gymnázia</h1>
 
-  <hr>
-  <h3>Rozpoznané prvky <span id="countBadge" class="badge">0</span></h3>
-  <div id="fieldList" class="list"><div>Nahraj PDF.</div></div>
+    <div class="intro">
+        Vážení rodiče,<br><br>
+        vítáme Vás i Vaše dítě na našem gymnáziu. Naším cílem je nejen poskytnout studentům kvalitní vzdělání, ale také rozvíjet jejich individuální potenciál a vytvořit bezpečné a podnětné prostředí. K tomu nám velmi pomůže, pokud Vaše dítě lépe poznáme Vašima očima. Zároveň věříme, že vzdělávání je společným úsilím školy a rodiny. Budeme proto rádi, když nám naznačíte, jakým způsobem byste se chtěli do života školy zapojit.<br><br>
+        V dotazníku nemusíte odpovídat na všechny otázky. Je na Vás, co nám chcete sdělit. Dotazník je dobrovolný a veškeré informace budou sloužit výhradně třídnímu učiteli a vedení školy pro pedagogické účely v souladu s GDPR.
+    </div>
 
-  <hr>
-  <h3>Vybraný prvek</h3>
-  <label>Typ</label>
-  <input id="propType" type="text" readonly>
-  <label>Text / hodnota</label>
-  <textarea id="propText"></textarea>
-  <div class="row">
-    <div><label>Strana</label><input id="propPage" type="number" readonly></div>
-    <div><label>Velikost písma</label><input id="propFont" type="number" value="11"></div>
-  </div>
-  <div class="row">
-    <div><label>X</label><input id="propX" type="number"></div>
-    <div><label>Y</label><input id="propY" type="number"></div>
-  </div>
-  <div class="row">
-    <div><label>Šířka</label><input id="propW" type="number"></div>
-    <div><label>Výška</label><input id="propH" type="number"></div>
-  </div>
-  <button id="applyBtn">Použít</button>
-  <button id="deleteBtn" class="danger">Smazat prvek</button>
-  <button id="toggleCheckBtn">Zaškrtnout / odškrtnout</button>
+    <form id="questionnaireForm">
+        <h3>1. Základní informace</h3>
+        <div class="line-group">
+            <div class="line-input-wrapper">
+                <label>Jméno a příjmení žáka:</label>
+                <input type="text" class="line-input" name="jmeno_zaka">
+            </div>
+            <div class="line-input-wrapper">
+                <label>Datum narození:</label>
+                <input type="text" class="line-input" name="datum_narozeni">
+            </div>
+        </div>
+        <div class="line-group">
+            <div class="line-input-wrapper">
+                <label>Základní škola:</label>
+                <input type="text" class="line-input" name="zs">
+            </div>
+            <div class="line-input-wrapper">
+                <label>Třídní učitel (nepovinné):</label>
+                <input type="text" class="line-input" name="tu_zs">
+            </div>
+        </div>
 
-  <hr>
-  <h3>Postup pro opravu textu</h3>
-  <p class="hint">
-    1. Zapni „Výběr“ a klikni na špatný text v PDF.<br>
-    2. Vlož „Bílý překryv“ přes starý text.<br>
-    3. Vlož „Nové textové pole“ se správným textem.<br>
-    4. Exportuj needitovatelné PDF.
-  </p>
-  <p class="small">
-    Poznámka: přesné automatické rozpoznání checkboxů v naskenovaných obrázcích tato offline HTML aplikace nedělá.
-    Rozpozná hlavně skutečná PDF formulářová pole.
-  </p>
-</aside>
+        <h3>2. Zájmy dítěte</h3>
+        <div class="form-group">
+            <label>Jaké jsou hlavní zájmy Vašeho dítěte (školní i mimoškolní)?</label>
+            <div class="checkbox-container">
+                <div class="checkbox-group">
+                    <input type="checkbox" id="zajem_sport" name="zajem_sport">
+                    <label for="zajem_sport">sport (jaký?):</label>
+                    <input type="text" class="line-input" name="zajem_sport_spec" style="width: 250px; margin-left: 10px;">
+                </div>
+                <div class="checkbox-group">
+                    <input type="checkbox" id="zajem_umeni" name="zajem_umeni">
+                    <label for="zajem_umeni">umění (hudba, výtvarné, divadlo apod.)</label>
+                </div>
+                <div class="checkbox-group">
+                    <input type="checkbox" id="zajem_priroda" name="zajem_priroda">
+                    <label for="zajem_priroda">přírodní vědy</label>
+                </div>
+                <div class="checkbox-group">
+                    <input type="checkbox" id="zajem_humanitni" name="zajem_humanitni">
+                    <label for="zajem_humanitni">humanitní vědy</label>
+                </div>
+                <div class="checkbox-group">
+                    <input type="checkbox" id="zajem_it" name="zajem_it">
+                    <label for="zajem_it">technika / IT</label>
+                </div>
+                <div class="checkbox-group">
+                    <input type="checkbox" id="zajem_jazyky" name="zajem_jazyky">
+                    <label for="zajem_jazyky">jazyky</label>
+                </div>
+                <div class="checkbox-group">
+                    <input type="checkbox" id="zajem_jine" name="zajem_jine">
+                    <label for="zajem_jine">jiné:</label>
+                    <input type="text" class="line-input" name="zajem_jine_spec" style="width: 250px; margin-left: 10px;">
+                </div>
+            </div>
+        </div>
+        <div class="form-group">
+            <label>Věnuje se dítě některému zájmu dlouhodobě či systematicky? Jakým způsobem (kroužky, oddíly, samostudium apod.)?</label>
+            <textarea name="zajmy_systematicky" placeholder="Zde se rozepište..."></textarea>
+        </div>
+        <div class="form-group">
+            <label>Co Vaše dítě nejvíce baví ve škole?</label>
+            <textarea name="bavi_ve_skole" placeholder="Zde se rozepište..."></textarea>
+        </div>
 
-<section id="viewer"><p>Nahraj PDF soubor.</p></section>
-</main>
+        <h3>3. Úspěchy a silné stránky</h3>
+        <div class="form-group">
+            <label>Co považujete za největší úspěchy Vašeho dítěte? (např. soutěže, projekty, ocenění, sportovní výsledky)</label>
+            <textarea name="uspechy" placeholder="Zde se rozepište..."></textarea>
+        </div>
+        <div class="form-group">
+            <label>V čem vidíte jeho hlavní silné stránky? (např. logické myšlení, vytrvalost, kreativita, komunikace…)</label>
+            <textarea name="silne_stranky" placeholder="Zde se rozepište..."></textarea>
+        </div>
+        <div class="form-group">
+            <label>Má Vaše dítě nějaké mimořádné schopnosti či nadání, o kterých bychom měli vědět? Bylo v PPP identifikováno jako mimořádně nadané?</label>
+            <textarea name="nadani" placeholder="Zde se rozepište..."></textarea>
+        </div>
+
+        <h3>4. Oblasti k rozvoji</h3>
+        <div class="form-group">
+            <label>Ve kterých oblastech byste chtěli, aby se Vaše dítě více rozvíjelo?</label>
+            <textarea name="rozvoj" placeholder="Zde se rozepište..."></textarea>
+        </div>
+        <div class="form-group">
+            <label>Kde naopak vnímáte slabší stránky nebo obtíže? (např. organizace času, soustředění, určité předměty)</label>
+            <textarea name="slabiny" placeholder="Zde se rozepište..."></textarea>
+        </div>
+        <div class="form-group">
+            <label>Existují nějaká specifika nebo zvláštnosti v chování, učení či zdravotním stavu, o kterých by měl třídní učitel vědět, abychom zajistili pohodu Vašeho dítěte? (např. specifické poruchy učení/pozornosti, zdravotní omezení, vysoká citlivost na stres apod.)</label>
+            <textarea name="specifika" placeholder="Zde se rozepište..."></textarea>
+        </div>
+
+        <h3>5. Osobnost dítěte</h3>
+        <div class="form-group">
+            <label>Jak byste popsali povahu Vašeho dítěte?</label>
+            <div class="checkbox-container">
+                <div class="checkbox-group">
+                    <input type="checkbox" id="povaha_introvert" name="povaha_introvert">
+                    <label for="povaha_introvert">spíše introvertní</label>
+                </div>
+                <div class="checkbox-group">
+                    <input type="checkbox" id="povaha_extrovert" name="povaha_extrovert">
+                    <label for="povaha_extrovert">spíše extrovertní</label>
+                </div>
+                <div class="checkbox-group">
+                    <input type="checkbox" id="povaha_vyrovnane" name="povaha_vyrovnane">
+                    <label for="povaha_vyrovnane">vyrovnané</label>
+                </div>
+            </div>
+        </div>
+        <div class="form-group">
+            <label>Jak reaguje na nové prostředí a kolektiv?</label>
+            <textarea name="novy_kolektiv" placeholder="Zde se rozepište..."></textarea>
+        </div>
+        <div class="form-group">
+            <label>Jak zvládá zátěž nebo stres?</label>
+            <textarea name="stres" placeholder="Zde se rozepište..."></textarea>
+        </div>
+        <div class="form-group">
+            <label>Je něco, co bychom měli o Vašem dítěti vědět, aby se ve škole cítilo dobře?</label>
+            <textarea name="pohoda_skola" placeholder="Zde se rozepište..."></textarea>
+        </div>
+
+        <h3>6. Adaptace na novou školu</h3>
+        <div class="form-group">
+            <label>Jak se Vaše dítě na gymnázium těší a jak prožívá tento přechod? (Vyberte jednu možnost)</label>
+            <div class="checkbox-container">
+                <div class="checkbox-group">
+                    <input type="checkbox" id="tesi_se_velmi" name="tesi_se_velmi">
+                    <label for="tesi_se_velmi">Velmi se těší, převládá nadšení a zvědavost.</label>
+                </div>
+                <div class="checkbox-group">
+                    <input type="checkbox" id="tesi_se_obavy" name="tesi_se_obavy">
+                    <label for="tesi_se_obavy">Těší se, ale má zároveň přirozené obavy.</label>
+                </div>
+                <div class="checkbox-group">
+                    <input type="checkbox" id="obava_nervozita" name="obava_nervozita">
+                    <label for="obava_nervozita">Spíše se obává, převládá nervozita nebo nejistota.</label>
+                </div>
+            </div>
+        </div>
+        <div class="form-group">
+            <label>Z čeho má Vaše dítě v souvislosti s nástupem na novou školu největší obavy? (Může zaškrtnout více možností)</label>
+            <div class="checkbox-container">
+                <div class="checkbox-group">
+                    <input type="checkbox" id="obava_naroky" name="obava_naroky">
+                    <label for="obava_naroky">Zvládnutí vyšších studijních nároků a množství učiva</label>
+                </div>
+                <div class="checkbox-group">
+                    <input type="checkbox" id="obava_kolektiv" name="obava_kolektiv">
+                    <label for="obava_kolektiv">Zapadnutí do nového třídního kolektivu a hledání kamarádů</label>
+                </div>
+                <div class="checkbox-group">
+                    <input type="checkbox" id="obava_zmena" name="obava_zmena">
+                    <label for="obava_zmena">Změna prostředí a organizace školy (dojíždění, nový režim)</label>
+                </div>
+                <div class="checkbox-group">
+                    <input type="checkbox" id="obava_ucitele" name="obava_ucitele">
+                    <label for="obava_ucitele">Noví učitelé a jiný přístup k hodnocení</label>
+                </div>
+                <div class="checkbox-group">
+                    <input type="checkbox" id="obava_ztrata" name="obava_ztrata">
+                    <label for="obava_ztrata">Ztráta kontaktu se starými kamarády ze základní školy</label>
+                </div>
+                <div class="checkbox-group">
+                    <input type="checkbox" id="obava_jine" name="obava_jine">
+                    <label for="obava_jine">Jiné:</label>
+                    <input type="text" class="line-input" name="obava_jine_spec" style="width: 250px; margin-left: 10px;">
+                </div>
+            </div>
+        </div>
+        <div class="form-group">
+            <label>Máte Vy jako rodiče obavy spojené s nástupem dítěte?</label>
+            <textarea name="obavy_rodicu" placeholder="Zde se rozepište..."></textarea>
+        </div>
+        <div class="form-group">
+            <label>Jak bychom mohli Vaše dítě v prvních měsících nejlépe podpořit?</label>
+            <textarea name="podpora_skoly" placeholder="Zde se rozepište..."></textarea>
+        </div>
+
+        <h3>7. Očekávání rodičů</h3>
+        <div class="form-group">
+            <label>Jaká jsou Vaše hlavní očekávání od studia Vašeho dítěte na gymnáziu?</label>
+            <textarea name="ocekavani_studium"></textarea>
+        </div>
+        <div class="form-group">
+            <label>Co považujete za nejdůležitější roli školy? (např. znalosti, výchova, příprava na VŠ, rozvoj osobnosti…)</label>
+            <textarea name="role_skoly"></textarea>
+        </div>
+        <div class="form-group">
+            <label>Co pro Vás znamená „kvalitní škola“?</label>
+            <textarea name="kvalitni_skola"></textarea>
+        </div>
+        <div class="form-group">
+            <label>Jaký přístup učitelů k žákům preferujete?</label>
+            <textarea name="pristup_ucitelu"></textarea>
+        </div>
+        <div class="form-group">
+            <label>Jakou míru komunikace se školou očekáváte? (např. pravidelná zpětná vazba, individuální konzultace apod.)</label>
+            <textarea name="komunikace_skola"></textarea>
+        </div>
+        <div class="form-group">
+            <label>V čem by podle Vás měla škola spolupracovat s rodiči nejvíce?</label>
+            <textarea name="spoluprace_oblasti"></textarea>
+        </div>
+        <div class="form-group">
+            <label>Je něco, čemu by se škola měla naopak vyhnout?</label>
+            <textarea name="ceho_se_vyhnout"></textarea>
+        </div>
+        <div class="form-group">
+            <label>Jaké hodnoty a dovednosti by podle Vás měla škola rozvíjet?</label>
+            <textarea name="hodnoty_dovednosti"></textarea>
+        </div>
+        <div class="form-group">
+            <label>Jak si představujete ideální spolupráci mezi školou a rodinou?</label>
+            <textarea name="idealni_spoluprace"></textarea>
+        </div>
+
+        <h3>8. Spolupráce rodičů a školy</h3>
+        <div class="form-group">
+            <label>Rádi bychom rozvíjeli různorodou spolupráci s rodiči. Pokud máte zájem, označte možnosti, kterými byste se mohli zapojit:</label>
+            <div class="checkbox-container">
+                <div class="checkbox-group">
+                    <input type="checkbox" id="zapojeni_prednaska" name="zapojeni_prednaska">
+                    <label for="zapojeni_prednaska">odborná přednáška / beseda (uveďte oblast):</label>
+                    <input type="text" class="line-input" name="zapojeni_prednaska_spec" style="width: 250px; margin-left: 10px;">
+                </div>
+                <div class="checkbox-group">
+                    <input type="checkbox" id="zapojeni_exkurze" name="zapojeni_exkurze">
+                    <label for="zapojeni_exkurze">exkurze do firmy / instituce (uveďte):</label>
+                    <input type="text" class="line-input" name="zapojeni_exkurze_spec" style="width: 250px; margin-left: 10px;">
+                </div>
+                <div class="checkbox-group">
+                    <input type="checkbox" id="zapojeni_vyzkum" name="zapojeni_vyzkum">
+                    <label for="zapojeni_vyzkum">spolupráce s vědeckým pracovištěm / univerzitou</label>
+                </div>
+                <div class="checkbox-group">
+                    <input type="checkbox" id="zapojeni_sponzor" name="zapojeni_sponzor">
+                    <label for="zapojeni_sponzor">podpora projektů (organizační / finanční – sponzorství)</label>
+                </div>
+                <div class="checkbox-group">
+                    <input type="checkbox" id="zapojeni_kariera" name="zapojeni_kariera">
+                    <label for="zapojeni_kariera">kariérní poradenství (sdílení zkušeností z praxe)</label>
+                </div>
+                <div class="checkbox-group">
+                    <input type="checkbox" id="zapojeni_mentoring" name="zapojeni_mentoring">
+                    <label for="zapojeni_mentoring">mentoring / individuální práce se studenty</label>
+                </div>
+                <div class="checkbox-group">
+                    <input type="checkbox" id="zapojeni_material" name="zapojeni_material">
+                    <label for="zapojeni_material">materiální forma podpory (např. finanční dar, sponzorský příspěvek nebo zajištění materiálního vybavení pro výuku/mimoškolní aktivity)</label>
+                </div>
+                <div class="checkbox-group">
+                    <input type="checkbox" id="zapojeni_jine" name="zapojeni_jine">
+                    <label for="zapojeni_jine">jiná forma spolupráce (např. pomoc s organizací akcí, právní či jiné poradenství, tisk materiálů apod.):</label>
+                    <input type="text" class="line-input" name="zapojeni_jine_spec" style="width: 250px; margin-left: 10px;">
+                </div>
+            </div>
+        </div>
+        <div class="form-group">
+            <label>Můžete stručně popsat své profesní zaměření a možnosti zapojení:</label>
+            <textarea name="profese_zapojeni" placeholder="Zde se rozepište..."></textarea>
+        </div>
+
+        <h3>9. Další sdělení</h3>
+        <div class="form-group">
+            <label>Máte-li jakékoli další informace, doporučení či přání, budeme rádi, když je zde uvedete:</label>
+            <textarea name="dalsi_sdeleni" placeholder="Zde se rozepište..."></textarea>
+        </div>
+
+        <div class="footer">
+            Velmi si vážíme Vaší důvěry a podpory – společně můžeme vytvořit prostředí, ve kterém budou děti úspěšně růst.
+            <br><br>
+            <div class="line-group">
+                <div class="line-input-wrapper">
+                    <label>Jméno rodiče:</label>
+                    <input type="text" class="line-input" name="jmeno_rodice">
+                </div>
+                <div class="line-input-wrapper">
+                    <label>Kontakt (e-mail / tel.):</label>
+                    <input type="text" class="line-input" name="kontakt_rodice">
+                </div>
+            </div>
+        </div>
+    </form>
+
+    <div class="actions-panel">
+        <button type="button" class="btn btn-secondary" onclick="saveToBrowser()">💾 Uložit do prohlížeče (Rozpracováno)</button>
+        <button type="button" class="btn btn-primary" onclick="exportToPDF()">📄 Exportovat do PDF / Tisk</button>
+    </div>
+</div>
 
 <script>
-pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+    // Save form data to LocalStorage so it stays inside the browser
+    function saveToBrowser() {
+        const form = document.getElementById('questionnaireForm');
+        const formData = new FormData(form);
+        const data = {};
+        
+        formData.forEach((value, key) => {
+            if (data[key]) {
+                if (!Array.isArray(data[key])) {
+                    data[key] = [data[key]];
+                }
+                data[key].push(value);
+            } else {
+                data[key] = value;
+            }
+        });
 
-let pdfBytes=null, pdfjsDoc=null, scale=1.45, currentTool='select', selected=null;
-let pageSizes={}; // page -> {w,h}
-let items=[]; // existing+new objects in PDF point coords: {id,kind,fieldName,page,x,y,w,h,value,checked,fontSize,isNew,deleted}
-let textBoxes=[];
+        // Also save checkboxes state correctly
+        const checkboxes = form.querySelectorAll('input[type="checkbox"]');
+        checkboxes.forEach(cb => {
+            data['cb_' + cb.id] = cb.checked;
+        });
 
-const viewer=document.getElementById('viewer');
-const $=id=>document.getElementById(id);
-const uid=()=>Math.random().toString(36).slice(2,9);
+        localStorage.setItem('gym_questionnaire_data', JSON.stringify(data));
+        alert('Data byla úspěšně uložena do paměti prohlížeče! Až stránku příště otevřete, text tu zůstane.');
+    }
 
-function setTool(t){
-  currentTool=t;
-  ['toolSelect','toolText','toolCheck','toolWhite','toolLine'].forEach(id=>$(id).classList.remove('active'));
-  ({select:'toolSelect',text:'toolText',check:'toolCheck',white:'toolWhite',line:'toolLine'}[t] && $(({select:'toolSelect',text:'toolText',check:'toolCheck',white:'toolWhite',line:'toolLine'}[t])).classList.add('active'));
-}
-$('toolSelect').onclick=()=>setTool('select');
-$('toolText').onclick=()=>setTool('text');
-$('toolCheck').onclick=()=>setTool('check');
-$('toolWhite').onclick=()=>setTool('white');
-$('toolLine').onclick=()=>setTool('line');
-
-$('file').onchange=async e=>{
-  const f=e.target.files[0]; if(!f) return;
-  pdfBytes=await f.arrayBuffer();
-  pdfjsDoc=await pdfjsLib.getDocument({data:pdfBytes.slice(0)}).promise;
-  selected=null; items=[]; textBoxes=[]; pageSizes={};
-  await renderAll();
-  await detectAnnotations();
-  drawItems();
-  updateList();
-  $('exportEditable').disabled=false; $('exportFlat').disabled=false;
-};
-
-async function renderAll(){
-  viewer.innerHTML='';
-  for(let p=1;p<=pdfjsDoc.numPages;p++){
-    const page=await pdfjsDoc.getPage(p);
-    const viewport=page.getViewport({scale});
-    const base=page.getViewport({scale:1});
-    pageSizes[p]={w:base.width,h:base.height};
-    const wrap=document.createElement('div');
-    wrap.className='pageWrap'; wrap.dataset.page=p;
-    wrap.style.width=viewport.width+'px'; wrap.style.height=viewport.height+'px';
-    const canvas=document.createElement('canvas');
-    canvas.width=viewport.width; canvas.height=viewport.height;
-    await page.render({canvasContext:canvas.getContext('2d'),viewport}).promise;
-    const textLayer=document.createElement('div'); textLayer.className='layer textLayer';
-    const formLayer=document.createElement('div'); formLayer.className='layer formLayer';
-    formLayer.onclick=e=>placeNew(e,p,wrap);
-    wrap.append(canvas,textLayer,formLayer); viewer.appendChild(wrap);
-    await renderTextBoxes(page,p,textLayer);
-  }
-}
-
-async function renderTextBoxes(page,p,layer){
-  const txt=await page.getTextContent();
-  for(const it of txt.items){
-    const tr=pdfjsLib.Util.transform(page.getViewport({scale}).transform, it.transform);
-    const x=tr[4], y=tr[5], fs=Math.hypot(tr[2],tr[3]) || 10;
-    const div=document.createElement('div');
-    div.className='textBox';
-    div.textContent=it.str;
-    div.style.left=x+'px';
-    div.style.top=(y-fs)+'px';
-    div.style.fontSize=fs+'px';
-    div.style.height=(fs*1.25)+'px';
-    div.style.minWidth=Math.max(10,it.width*scale)+'px';
-    div.onclick=e=>{
-      e.stopPropagation();
-      document.querySelectorAll('.textBox.selected').forEach(d=>d.classList.remove('selected'));
-      div.classList.add('selected');
-      $('propType').value='běžný text PDF (nelze přímo přepsat)';
-      $('propText').value=it.str;
-      $('propPage').value=p;
-      $('propFont').value=Math.round(fs/scale*10)/10;
-      $('propX').value=Math.round(x/scale);
-      $('propY').value=Math.round((y-fs)/scale);
-      $('propW').value=Math.round((it.width||80));
-      $('propH').value=Math.round(fs*1.25/scale);
-      selected=null;
+    // Load form data from LocalStorage upon opening
+    window.onload = function() {
+        const savedData = localStorage.getItem('gym_questionnaire_data');
+        if (savedData) {
+            const data = JSON.parse(savedData);
+            const form = document.getElementById('questionnaireForm');
+            
+            Object.keys(data).forEach(key => {
+                if (key.startsWith('cb_')) {
+                    const cbId = key.replace('cb_', '');
+                    const cb = document.getElementById(cbId);
+                    if (cb) cb.checked = data[key];
+                } else {
+                    const input = form.elements[key];
+                    if (input) {
+                        if (input.type !== 'checkbox') {
+                            input.value = data[key];
+                        }
+                    }
+                }
+            });
+        }
     };
-    layer.appendChild(div);
-    textBoxes.push({page:p,div,str:it.str});
-  }
-}
 
-async function detectAnnotations(){
-  for(let p=1;p<=pdfjsDoc.numPages;p++){
-    const page=await pdfjsDoc.getPage(p);
-    const anns=await page.getAnnotations({intent:'display'});
-    for(const a of anns){
-      if(a.subtype!=='Widget') continue;
-      const [x1,y1,x2,y2]=a.rect;
-      const w=Math.abs(x2-x1), h=Math.abs(y2-y1);
-      const kind=(a.fieldType==='Btn')?'checkbox':(a.fieldType==='Tx'?'text':'field');
-      items.push({
-        id:uid(),kind,fieldName:a.fieldName||'',page:p,
-        x:Math.min(x1,x2),y:Math.min(y1,y2),w,h,
-        value:a.fieldValue||'',checked:!!a.fieldValue && a.fieldValue!=='Off',
-        fontSize:11,isNew:false,deleted:false
-      });
+    // Trigger PDF Export/Print window
+    function exportToPDF() {
+        window.print();
     }
-  }
-}
-
-function pageToCss(obj){
-  const ph=pageSizes[obj.page].h;
-  return {left:obj.x*scale, top:(ph-obj.y-obj.h)*scale, width:obj.w*scale, height:obj.h*scale};
-}
-function cssToPage(page,xCss,yCss,wCss,hCss){
-  const ph=pageSizes[page].h;
-  return {x:xCss/scale, y:ph-(yCss/scale)-(hCss/scale), w:wCss/scale, h:hCss/scale};
-}
-
-function drawItems(){
-  document.querySelectorAll('.formItem,.newItem').forEach(e=>e.remove());
-  for(const obj of items.filter(i=>!i.deleted)){
-    const layer=document.querySelector(`.pageWrap[data-page="${obj.page}"] .formLayer`);
-    const el=document.createElement('div'); obj.el=el;
-    el.className=(obj.isNew?'newItem ':'formItem ')+(obj.kind==='checkbox'?'checkbox':obj.kind==='white'?'white':obj.kind==='line'?'line':'text');
-    const c=pageToCss(obj);
-    Object.assign(el.style,{left:c.left+'px',top:c.top+'px',width:c.width+'px',height:c.height+'px'});
-    if(obj.kind==='checkbox') el.textContent=obj.checked?'✓':'';
-    if(obj.kind==='text') {
-      el.textContent=obj.value||'';
-      el.style.fontSize=(obj.fontSize*scale)+'px';
-      el.style.overflow='hidden';
-      el.style.padding='1px 3px';
-    }
-    if(obj.kind==='line') {
-      el.style.height='0px';
-      el.style.minHeight='0px';
-    }
-    const handle=document.createElement('span'); handle.className='handle'; el.appendChild(handle);
-    handle.onmousedown=e=>resizeStart(e,obj);
-    el.onmousedown=e=>dragStart(e,obj);
-    el.onclick=e=>{e.stopPropagation();selectItem(obj)};
-    layer.appendChild(el);
-  }
-}
-function selectItem(obj){
-  if(selected?.el) selected.el.classList.remove('selected');
-  selected=obj;
-  if(obj?.el) obj.el.classList.add('selected');
-  if(!obj) return;
-  $('propType').value=(obj.kind)+(obj.fieldName?' / '+obj.fieldName:'');
-  $('propText').value=obj.value||'';
-  $('propPage').value=obj.page;
-  $('propFont').value=obj.fontSize||11;
-  $('propX').value=Math.round(obj.x);
-  $('propY').value=Math.round(obj.y);
-  $('propW').value=Math.round(obj.w);
-  $('propH').value=Math.round(obj.h);
-}
-
-function placeNew(e,p,wrap){
-  if(e.target.classList.contains('formItem')||e.target.classList.contains('newItem')||e.target.classList.contains('handle')) return;
-  if(currentTool==='select') {selectItem(null);return}
-  const r=wrap.getBoundingClientRect();
-  const x=e.clientX-r.left, y=e.clientY-r.top;
-  const dims={text:[170,24],check:[14,14],white:[180,26],line:[180,2]}[currentTool];
-  const coords=cssToPage(p,x,y,dims[0],dims[1]);
-  const obj={id:uid(),kind: currentTool==='check'?'checkbox':currentTool,page:p,
-    ...coords,value:currentTool==='text'?'Nový text':'',checked:false,fontSize:11,isNew:true,deleted:false,fieldName:''
-  };
-  items.push(obj); drawItems(); selectItem(obj); updateList(); setTool('select');
-}
-
-function dragStart(e,obj){
-  if(e.target.classList.contains('handle')) return;
-  e.preventDefault(); e.stopPropagation(); selectItem(obj);
-  const startX=e.clientX,startY=e.clientY, ox=obj.x, oy=obj.y;
-  document.onmousemove=ev=>{
-    const dx=(ev.clientX-startX)/scale, dy=(ev.clientY-startY)/scale;
-    obj.x=ox+dx; obj.y=oy-dy;
-    const c=pageToCss(obj);
-    Object.assign(obj.el.style,{left:c.left+'px',top:c.top+'px'});
-    selectItem(obj);
-  };
-  document.onmouseup=()=>{document.onmousemove=null;document.onmouseup=null;updateList()};
-}
-function resizeStart(e,obj){
-  e.preventDefault(); e.stopPropagation(); selectItem(obj);
-  const sx=e.clientX, sy=e.clientY, ow=obj.w, oh=obj.h;
-  document.onmousemove=ev=>{
-    obj.w=Math.max(4,ow+(ev.clientX-sx)/scale);
-    obj.h=Math.max(obj.kind==='line'?0:4,oh+(ev.clientY-sy)/scale);
-    const c=pageToCss(obj);
-    Object.assign(obj.el.style,{width:c.width+'px',height:(obj.kind==='line'?0:c.height)+'px'});
-    selectItem(obj);
-  };
-  document.onmouseup=()=>{document.onmousemove=null;document.onmouseup=null;updateList()};
-}
-$('applyBtn').onclick=()=>{
-  if(!selected) return;
-  selected.value=$('propText').value;
-  selected.fontSize=+$('propFont').value||11;
-  selected.x=+$('propX').value||selected.x;
-  selected.y=+$('propY').value||selected.y;
-  selected.w=+$('propW').value||selected.w;
-  selected.h=+$('propH').value||selected.h;
-  drawItems(); selectItem(selected); updateList();
-};
-$('deleteBtn').onclick=()=>{
-  if(!selected) return;
-  selected.deleted=true; selected=null; drawItems(); updateList();
-};
-$('toggleCheckBtn').onclick=()=>{
-  if(!selected || selected.kind!=='checkbox') return;
-  selected.checked=!selected.checked; drawItems(); selectItem(selected);
-};
-
-function updateList(){
-  const list=$('fieldList'); list.innerHTML='';
-  const visible=items.filter(i=>!i.deleted);
-  $('countBadge').textContent=visible.length;
-  if(!visible.length){list.innerHTML='<div>Žádná formulářová pole nebyla rozpoznána.</div>';return;}
-  visible.forEach((it,idx)=>{
-    const d=document.createElement('div');
-    d.textContent=`${idx+1}. str. ${it.page} – ${it.kind}${it.fieldName?' – '+it.fieldName:''}`;
-    d.onclick=()=>{selectItem(it); it.el?.scrollIntoView({block:'center'});}
-    list.appendChild(d);
-  });
-}
-
-async function exportPdf(flatten=false){
-  const {PDFDocument,rgb,StandardFonts}=PDFLib;
-  const out=await PDFDocument.load(pdfBytes.slice(0));
-  const font=await out.embedFont(StandardFonts.Helvetica);
-  const pages=out.getPages();
-
-  // Remove/blank deleted existing fields visually by white overlay, because removing AcroForm widgets safely is complex in browser.
-  for(const it of items){
-    const page=pages[it.page-1];
-    if(it.deleted && !it.isNew){
-      page.drawRectangle({x:it.x,y:it.y,width:it.w,height:it.h,color:rgb(1,1,1)});
-    }
-  }
-
-  // Try to update existing AcroForm values.
-  const form=out.getForm();
-  for(const it of items.filter(i=>!i.deleted && !i.isNew && i.fieldName)){
-    try{
-      const f=form.getFieldMaybe ? form.getFieldMaybe(it.fieldName) : form.getField(it.fieldName);
-      if(it.kind==='checkbox' && f && f.check){
-        it.checked ? f.check() : f.uncheck();
-      } else if(it.kind==='text' && f && f.setText){
-        f.setText(it.value||'');
-      }
-    }catch(e){}
-  }
-
-  // Draw all new items and also draw moved/resized values as appearance layer.
-  for(const it of items.filter(i=>!i.deleted)){
-    const page=pages[it.page-1];
-    if(it.isNew || flatten || !it.fieldName){
-      drawVisual(page,it,font);
-    } else if(flatten){
-      drawVisual(page,it,font);
-    }
-  }
-
-  if(flatten){
-    try{ form.flatten(); }catch(e){}
-  }
-
-  const bytes=await out.save();
-  const blob=new Blob([bytes],{type:'application/pdf'});
-  const a=document.createElement('a');
-  a.href=URL.createObjectURL(blob);
-  a.download=flatten?'upravene_needitovatelne.pdf':'upravene_vyplnitelne.pdf';
-  a.click();
-}
-function drawVisual(page,it,font){
-  if(it.kind==='white'){
-    page.drawRectangle({x:it.x,y:it.y,width:it.w,height:it.h,color:rgb(1,1,1)});
-  } else if(it.kind==='line'){
-    page.drawLine({start:{x:it.x,y:it.y+it.h/2},end:{x:it.x+it.w,y:it.y+it.h/2},thickness:1.2,color:rgb(0,0,0)});
-  } else if(it.kind==='checkbox'){
-    page.drawRectangle({x:it.x,y:it.y,width:it.w,height:it.h,borderWidth:1.2,borderColor:rgb(.1,.1,.1),color:rgb(1,1,1)});
-    if(it.checked){
-      page.drawText('X',{x:it.x+2,y:it.y+1,size:Math.max(8,it.h-3),font,color:rgb(0,0,0)});
-    }
-  } else if(it.kind==='text'){
-    page.drawRectangle({x:it.x,y:it.y,width:it.w,height:it.h,color:rgb(1,1,1),opacity:0});
-    const lines=(it.value||'').split(/\n/);
-    lines.forEach((ln,k)=>page.drawText(ln,{x:it.x+2,y:it.y+it.h-it.fontSize-2-k*(it.fontSize*1.2),size:it.fontSize,font,color:rgb(0,0,0)}));
-  }
-}
-$('exportEditable').onclick=()=>exportPdf(false);
-$('exportFlat').onclick=()=>exportPdf(true);
 </script>
+
 </body>
 </html>
