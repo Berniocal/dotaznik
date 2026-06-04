@@ -231,6 +231,11 @@
         }
 
         /* Print styles */
+        @page {
+            size: A4;
+            margin: 8mm 8mm;
+        }
+
         @media print {
             body {
                 background-color: white;
@@ -245,16 +250,42 @@
                 display: none;
             }
             body {
-                font-size: 12.5px;
-                line-height: 1.25;
+                font-size: 10.4px;
+                line-height: 1.12;
             }
-            h1 { font-size: 19px; margin-bottom: 14px; padding-bottom: 8px; }
-            h3 { font-size: 14.5px; margin-top: 16px; margin-bottom: 7px; }
-            .intro { font-size: 12.5px; padding: 10px; margin-bottom: 14px; }
-            .form-group { margin-bottom: 9px; }
+            .container {
+                box-shadow: none;
+                padding: 0;
+                width: 100%;
+                max-width: none;
+            }
+            h1 { font-size: 15.5px; margin-bottom: 8px; padding-bottom: 5px; }
+            h3 { font-size: 11.8px; margin-top: 9px; margin-bottom: 4px; padding-bottom: 2px; }
+            .intro { font-size: 10.2px; padding: 6px; margin-bottom: 8px; }
+            .form-group { margin-bottom: 4.5px; }
+            .form-group label { margin-bottom: 2px; }
+            .line-group { gap: 10px; margin-bottom: 4px; }
+            .line-input-wrapper { gap: 5px; margin-bottom: 3px; }
+            .checkbox-container { gap: 2.5px; margin-top: 2px; }
+            .checkbox-group { gap: 6px; }
+            .checkbox-group input[type="checkbox"] { width: 11px; height: 11px; }
+            .line-input { font-size: 10.4px; padding: 1px 0; }
             textarea {
                 border: 1px solid #cbd5e0;
-                height: 54px;
+                min-height: 26px !important;
+                height: 26px;
+                font-size: 10.4px;
+                line-height: 1.12;
+                padding: 3px;
+                margin-top: 1px;
+            }
+            textarea.has-content {
+                height: auto;
+            }
+            .footer {
+                margin-top: 10px;
+                padding-top: 6px;
+                font-size: 10.2px;
             }
             .line-input {
                 border-bottom: 1px solid #cbd5e0;
@@ -577,9 +608,23 @@
     }
     
 function autoResizeTextarea(el) {
+    el.classList.toggle('has-content', el.value.trim().length > 0);
+
+    if (window.matchMedia && window.matchMedia('print').matches && el.value.trim().length === 0) {
+        el.style.height = '26px';
+        return;
+    }
+
     el.style.height = 'auto';
     el.style.height = el.scrollHeight + 'px';
 }
+
+function resizeAllTextareasForPrint() {
+    document.querySelectorAll('textarea').forEach(autoResizeTextarea);
+}
+
+window.addEventListener('beforeprint', resizeAllTextareasForPrint);
+window.addEventListener('afterprint', resizeAllTextareasForPrint);
 
     // Save form data to LocalStorage so it stays inside the browser
     function saveToBrowser() {
@@ -641,6 +686,7 @@ function autoResizeTextarea(el) {
 
     // Trigger PDF Export/Print window
     function exportToPDF() {
+        resizeAllTextareasForPrint();
         window.print();
     }
 </script>
